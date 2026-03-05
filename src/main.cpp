@@ -19,23 +19,14 @@ String lastCardData = "";
 
 MFRC522 mfrc522(SDA_PIN, RST_PIN);
 
-/*void printHex(const uint8_t *buffer, size_t len) {
-  for (size_t i = 0; i < len; ++i) {
-    if (buffer[i] < 0x10);
-    Serial.print(buffer[i], HEX);
-    if (i + 1 < len);
-  }
-}*/
-
 void printCardInfo() {
-  //Serial.println("--- Tag detected ---");
-  //Serial.print("UID: ");
-  //printHex(mfrc522.uid.uidByte, mfrc522.uid.size);
-  //Serial.println();
-  //Serial.print("UID size: "); Serial.println(mfrc522.uid.size);
-  //Serial.print("SAK: 0x"); Serial.println(mfrc522.uid.sak, HEX);
+  Serial.println("--- Tag detected ---");
+  Serial.print("UID: ");
+  Serial.println();
+  Serial.print("UID size: "); Serial.println(mfrc522.uid.size);
+  Serial.print("SAK: 0x"); Serial.println(mfrc522.uid.sak, HEX);
   MFRC522::PICC_Type piccType = mfrc522.PICC_GetType(mfrc522.uid.sak);
-  //Serial.print("PICC Type: "); Serial.println(mfrc522.PICC_GetTypeName(piccType));
+  Serial.print("PICC Type: "); Serial.println(mfrc522.PICC_GetTypeName(piccType));
 }
 
 String GetCardData(){
@@ -83,9 +74,11 @@ void NewCardDetected(String cardData){
   String json = "{\"rfid_reader\":\"new_card\",\"data\":\"" + cardData + "\"}";
   // JSON looks like this: {"rfid_reader":"new_card","data":"CardDataHere"}
 
+  Serial.println("New card detected with data: " + cardData);
+
   // Send data to car via http request
   HTTPClient http;
-  http.begin("http://" + String(carIp) + ":");
+  http.begin("http://" + String(carIp) + ":5000/sensors/rfidupdate");
   int httpCode = http.POST(json);
   http.end();
 }
@@ -95,40 +88,65 @@ void setup() {
   delay(100);
   SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, SDA_PIN);
   mfrc522.PCD_Init();
-  //Serial.println("MFRC522 initialized");
+  Serial.println("MFRC522 initialized");
 
   // login to wifi
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    //Serial.print(".");
+    Serial.print(".");
   }
 
   // Ask server for orangepi ip address
   HTTPClient http;
   http.begin("http://5.175.245.160:8300/text");
   int httpCode = http.GET();
+
+  // Log the HTTP response code and handle errors
+  Serial.print("HTTP Response code: ");
+  Serial.println(httpCode);
+
   if (httpCode <= 0) {
+    Serial.println("Failed to get orangepi IP, restarting...");
     ESP.restart();
   }
   if (httpCode != HTTP_CODE_OK) {
+    Serial.println("Failed to get orangepi IP. body empty, restarting...");
     ESP.restart();
   }
   char* orangepiIp = strdup(http.getString().c_str());
+  Serial.print("Orangepi IP: ");
+  Serial.println(orangepiIp);
   http.end();
 
   // Ask orangepi for car ip address
-  http.begin("http://" + String(orangepiIp) + "/api/register/?device=rescuecar");
+  http.begin("http://" + String(orangepiIp) + "/api/getip/?device=rescuecar");
   httpCode = http.GET();
+
+  Serial.print("HTTP Response code: ");
+  Serial.println(httpCode);
+
   if (httpCode <= 0) {
+    Serial.println("Failed to get car IP from orangepi, restarting...");
     ESP.restart();
   }
   if (httpCode != HTTP_CODE_OK) {
+    Serial.println("Failed to get car IP from orangepi. body empty, restarting...");
     ESP.restart();
   }
-  carIp = strdup(http.getString().c_str());
+  String carResponse = http.getString();
+  Serial.print("Car response: ");
+  Serial.println(carResponse);
+
+  carResponse.trim();
+  carIp = strdup(carResponse.c_str());
+
+  Serial.print("Car IP: ");
+  Serial.println(carIp);
   http.end();
+
+  Serial.println("Setup complete, waiting for RFID cards...");
 }
 
 void loop() {
@@ -137,19 +155,19 @@ void loop() {
     printCardInfo();
     String cardData = GetCardData();
     if (cardData.length() > 0) {
-      //Serial.print("Card Data: ");
-      //Serial.println(cardData);
+      Serial.print("Card Data: ");
+      Serial.println(cardData);
       if (cardData != lastCardData) {
-        //Serial.println("New card detected with different data!");
+        Serial.println("New card detected with different data!");
 
         NewCardDetected(cardData);
 
         lastCardData = cardData;
       } else {
-        //Serial.println("Same card detected again.");
+        Serial.println("Same card detected again.");
       }
     } else {
-      //Serial.println("No data read from card.");
+      Serial.println("No data read from card.");
     }
     delay(100); // Wait 100 milliseconds before next read
   }
