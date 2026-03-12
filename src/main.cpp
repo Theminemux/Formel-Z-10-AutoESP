@@ -70,16 +70,30 @@ String GetCardData(){
   return data;
 }
 
-void NewCardDetected(String cardData){
+void NewCardDetected(String cardData)
+{
   String json = "{\"rfid_reader\":\"new_card\",\"data\":\"" + cardData + "\"}";
-  // JSON looks like this: {"rfid_reader":"new_card","data":"CardDataHere"}
+  // JSON: {"rfid_reader":"new_card","data":"CardDataHere"}
 
   Serial.println("New card detected with data: " + cardData);
 
-  // Send data to car via http request
   HTTPClient http;
   http.begin("http://" + String(carIp) + ":5000/sensors/rfidupdate");
+
+  http.addHeader("Content-Type", "application/json");   // WICHTIG für ASP.NET
+
   int httpCode = http.POST(json);
+
+  if (httpCode == HTTP_CODE_OK)
+  {
+    Serial.println("Data sent to car successfully");
+  }
+  else
+  {
+    Serial.print("Failed to send data to car, HTTP code: ");
+    Serial.println(httpCode);
+  }
+
   http.end();
 }
 
@@ -98,6 +112,7 @@ void setup() {
     Serial.print(".");
   }
 
+  /*
   // Ask server for orangepi ip address
   HTTPClient http;
   http.begin("http://5.175.245.160:8300/text");
@@ -145,6 +160,8 @@ void setup() {
   Serial.print("Car IP: ");
   Serial.println(carIp);
   http.end();
+  */
+  carIp = "192.168.137.25";
 
   Serial.println("Setup complete, waiting for RFID cards...");
 }
@@ -156,7 +173,7 @@ void loop() {
     String cardData = GetCardData();
     if (cardData.length() > 0) {
       Serial.print("Card Data: ");
-      Serial.println(cardData);
+      Serial.println(cardData); 
       if (cardData != lastCardData) {
         Serial.println("New card detected with different data!");
 
