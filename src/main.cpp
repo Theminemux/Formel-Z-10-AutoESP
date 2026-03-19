@@ -4,12 +4,19 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 
+#include <WebServer.h>
+
+#include <ESP32Servo.h>
+
 // Pins
 #define RST_PIN 19
 #define SDA_PIN 16
 #define SCK_PIN 17
 #define MOSI_PIN 5
 #define MISO_PIN 18
+
+// Servo-Pin (anpassen, falls du einen anderen nutzt)
+#define SERVO_PIN 4
 
 char* ssid = "rescuerobotcar";
 char* password = "mint2025";
@@ -18,6 +25,22 @@ char* carIp = "";
 String lastCardData = ""; 
 
 MFRC522 mfrc522(SDA_PIN, RST_PIN);
+WebServer server(80);
+Servo gateServo;
+
+void handleServoUp()
+{
+  Serial.println("HTTP: servo_up called");
+  gateServo.writeMicroseconds(2600); // Tor auf
+  server.send(200, "text/plain", "servo_up");
+}
+
+void handleServoDown()
+{
+  Serial.println("HTTP: servo_down called");
+  gateServo.write(0); // Tor zu
+  server.send(200, "text/plain", "servo_down");
+}
 
 void printCardInfo() {
   Serial.println("--- Tag detected ---");
@@ -112,6 +135,20 @@ void setup() {
     Serial.print(".");
   }
 
+  Serial.println("");
+  Serial.print("Connected to WiFi. IP address: ");
+  Serial.println(WiFi.localIP());
+
+  // Servo initialisieren
+  gateServo.setPeriodHertz(50);       // Standard-Servo: 50 Hz
+  gateServo.attach(SERVO_PIN);        // Servo-Pin
+  gateServo.write(0);                 // Startposition: zu
+
+  server.on("/servo_up", HTTP_GET, handleServoUp);
+  server.on("/servo_down", HTTP_GET, handleServoDown);
+  server.begin();
+  Serial.println("HTTP server started");
+
   /*
   // Ask server for orangepi ip address
   HTTPClient http;
@@ -167,6 +204,7 @@ void setup() {
 }
 
 void loop() {
+  server.handleClient();
   // Read RFID cards continuously
   if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
     printCardInfo();
