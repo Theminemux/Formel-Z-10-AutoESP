@@ -18,6 +18,8 @@
 // Servo-Pin (anpassen, falls du einen anderen nutzt)
 #define SERVO_PIN 4
 
+#define RASPBERRY_NEXT_RFID_TAG_SIGNAL_PIN -1 // Muss noch geändert werden.
+
 char* ssid = "rescuerobotcar";
 char* password = "mint2025";
 char* carIp = "";
@@ -149,6 +151,9 @@ void setup() {
   server.begin();
   Serial.println("HTTP server started");
 
+  // Raspberry Frühwarn RFID Pin initialisieren
+  pinMode(RASPBERRY_NEXT_RFID_TAG_SIGNAL_PIN, OUTPUT);
+  digitalWrite(RASPBERRY_NEXT_RFID_TAG_SIGNAL_PIN, LOW);
   
   // Ask server for orangepi ip address
   HTTPClient http;
