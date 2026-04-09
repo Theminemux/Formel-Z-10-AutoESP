@@ -149,7 +149,7 @@ void setup() {
   server.begin();
   Serial.println("HTTP server started");
 
-  /*
+  
   // Ask server for orangepi ip address
   HTTPClient http;
   http.begin("http://5.175.245.160:8300/text");
@@ -197,8 +197,7 @@ void setup() {
   Serial.print("Car IP: ");
   Serial.println(carIp);
   http.end();
-  */
-  carIp = "192.168.137.25";
+  //carIp = "192.168.137.25";
 
   Serial.println("Setup complete, waiting for RFID cards...");
 }
