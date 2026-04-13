@@ -20,9 +20,9 @@
 
 #define RASPBERRY_NEXT_RFID_TAG_SIGNAL_PIN -1 // Muss noch geändert werden.
 
-char* ssid = "rescuerobotcar";
-char* password = "mint2025";
-char* carIp = "";
+String ssid = "rescuerobotcar";
+String password = "mint2025";
+String carIp = "";
 
 String lastCardData = ""; 
 
