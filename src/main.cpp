@@ -18,8 +18,6 @@
 // Servo-Pin (anpassen, falls du einen anderen nutzt)
 #define SERVO_PIN 4
 
-#define RASPBERRY_NEXT_RFID_TAG_SIGNAL_PIN -1 // Muss noch geändert werden.
-
 const String ssid = "rescuerobotcar";
 const String password = "mint2025";
 const String deviceName = "rescuecar-esp32";
@@ -177,8 +175,10 @@ void NewCardDetected(String cardData)
 
   Serial.println("New card detected with data: " + cardData);
 
+  //SendJsonPost("macbook", "http://192.168.137.252:8005/api/rfidscan", json);
+
   if (carIp.length() > 0) {
-    String carUrl = "http://" + carIp + ":5000/sensors/rfidupdate";
+    String carUrl = "http://" + carIp + "/sensors/rfidupdate";
     SendJsonPost("car", carUrl, json);
   } else {
     Serial.println("[HTTP] carIp is empty, skip send to car");
@@ -229,10 +229,6 @@ void setup() {
   server.begin();
   Serial.println("[SETUP] HTTP server started");
 
-  // Raspberry Frühwarn RFID Pin initialisieren
-  pinMode(RASPBERRY_NEXT_RFID_TAG_SIGNAL_PIN, OUTPUT);
-  digitalWrite(RASPBERRY_NEXT_RFID_TAG_SIGNAL_PIN, LOW);
-  
   // Ask server for orangepi ip address
   HTTPClient http;
   Serial.print("[HTTP] Request OrangePi host from: ");
