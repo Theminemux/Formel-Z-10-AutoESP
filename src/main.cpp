@@ -281,7 +281,7 @@ void setup() {
   http.end();
 
   // Ask orangepi for car ip address
-  String carIpUrl = "http://" + orangepiIp + "/api/getip/?device=" + carName;
+  String carIpUrl = orangepiIp + "/api/getip/?device=" + carName;
   Serial.print("[HTTP] Request car IP from: ");
   Serial.println(carIpUrl);
   http.begin(carIpUrl);
